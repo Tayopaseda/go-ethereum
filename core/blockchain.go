@@ -1288,6 +1288,11 @@ func (bc *BlockChain) insertSidechain(it *insertIterator) (int, []interface{}, [
 	// ones. Any other errors means that the block is invalid, and should not be written
 	// to disk.
 	block, err := it.current(), consensus.ErrPrunedAncestor
+	if block == nil {
+		log.Info("Sidechain empty, nothing to do")
+		return 0, nil, nil, nil
+	}
+
 	for ; block != nil && (err == consensus.ErrPrunedAncestor); block, err = it.next() {
 		// Check the canonical state root for that number
 		if number := block.NumberU64(); current >= number {
@@ -1330,7 +1335,7 @@ func (bc *BlockChain) insertSidechain(it *insertIterator) (int, []interface{}, [
 	// If the externTd was larger than our local TD, we now need to reimport the previous
 	// blocks to regenerate the required state
 	localTd := bc.GetTd(bc.CurrentBlock().Hash(), current)
-	if localTd.Cmp(externTd) > 0 {
+	if localTd != nil && localTd.Cmp(externTd) > 0 {
 		log.Info("Sidechain written to disk", "start", it.first().NumberU64(), "end", it.previous().NumberU64(), "sidetd", externTd, "localtd", localTd)
 		return it.index, nil, nil, err
 	}
