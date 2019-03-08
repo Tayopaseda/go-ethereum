@@ -494,10 +494,11 @@ func (c *Clique) verifySeal(chain consensus.ChainReader, header *types.Header, p
 			}
 		}
 	}
-	// Ensure that the difficulty corresponds to the turn-ness of the signer
+
+	// Ensure that the difficulty doesn't exceed number of signers
 	if !c.fakeDiff {
-		expected := snap.calcDifficulty(header.Number.Uint64(), signer)
-		if header.Difficulty.Cmp(big.NewInt(int64(expected))) != 0 {
+		maxDifficulty := big.NewInt(int64(len(snap.Signers)))
+		if header.Difficulty.Cmp(maxDifficulty) > 0 {
 			return errWrongDifficulty
 		}
 	}
