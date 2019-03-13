@@ -100,7 +100,11 @@ func (db *LDBDatabase) Path() string {
 
 // Put puts the given key / value to the queue
 func (db *LDBDatabase) Put(key []byte, value []byte) error {
-	return db.db.Put(key, value, nil)
+	wo := &opt.WriteOptions{
+		NoWriteMerge: false,
+		Sync: true,
+	}
+	return db.db.Put(key, value, wo)
 }
 
 func (db *LDBDatabase) Has(key []byte) (bool, error) {
@@ -118,7 +122,11 @@ func (db *LDBDatabase) Get(key []byte) ([]byte, error) {
 
 // Delete deletes the key from the queue and database
 func (db *LDBDatabase) Delete(key []byte) error {
-	return db.db.Delete(key, nil)
+	wo := &opt.WriteOptions{
+		NoWriteMerge: false,
+		Sync: true,
+	}
+	return db.db.Delete(key, wo)
 }
 
 func (db *LDBDatabase) NewIterator() iterator.Iterator {
@@ -371,7 +379,11 @@ func (b *ldbBatch) Delete(key []byte) error {
 }
 
 func (b *ldbBatch) Write() error {
-	return b.db.Write(b.b, nil)
+	wo := &opt.WriteOptions{
+		NoWriteMerge: false,
+		Sync: true,
+	}
+	return b.db.Write(b.b, wo)
 }
 
 func (b *ldbBatch) ValueSize() int {
