@@ -274,6 +274,10 @@ func (bc *BlockChain) loadLastState() error {
 	return nil
 }
 
+func (bc *BlockChain) SetSync(sync bool) {
+	bc.db.SetSync(sync)
+}
+
 // SetHead rewinds the local chain to a new head. In the case of headers, everything
 // above the new head will be deleted and the new one set. In the case of blocks
 // though, the head may be further rewound if block bodies are missing (non-archive

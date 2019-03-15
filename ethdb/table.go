@@ -46,6 +46,10 @@ func (dt *table) Delete(key []byte) error {
 	return dt.db.Delete(append([]byte(dt.prefix), key...))
 }
 
+func (dt *table) SetSync(sync bool) {
+	dt.db.SetSync(sync)
+}
+
 func (dt *table) Close() {
 	// Do nothing; don't close the underlying DB.
 }

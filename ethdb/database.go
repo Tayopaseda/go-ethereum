@@ -53,6 +53,9 @@ type LDBDatabase struct {
 	diskReadMeter    metrics.Meter // Meter for measuring the effective amount of data read
 	diskWriteMeter   metrics.Meter // Meter for measuring the effective amount of data written
 
+	syncLock sync.RWMutex // Mutex protecting sync flag
+	syncWrites bool
+
 	quitLock sync.Mutex      // Mutex protecting the quit channel access
 	quitChan chan chan error // Quit channel to stop the metrics collection before closing the database
 
@@ -90,6 +93,7 @@ func NewLDBDatabase(file string, cache int, handles int) (*LDBDatabase, error) {
 		fn:  file,
 		db:  db,
 		log: logger,
+		syncWrites: true,
 	}, nil
 }
 
@@ -100,9 +104,12 @@ func (db *LDBDatabase) Path() string {
 
 // Put puts the given key / value to the queue
 func (db *LDBDatabase) Put(key []byte, value []byte) error {
+	db.syncLock.RLock()
+	defer db.syncLock.RUnlock()
+
 	wo := &opt.WriteOptions{
 		NoWriteMerge: false,
-		Sync: true,
+		Sync: db.syncWrites,
 	}
 	return db.db.Put(key, value, wo)
 }
@@ -122,11 +129,22 @@ func (db *LDBDatabase) Get(key []byte) ([]byte, error) {
 
 // Delete deletes the key from the queue and database
 func (db *LDBDatabase) Delete(key []byte) error {
+	db.syncLock.RLock()
+	defer db.syncLock.RUnlock()
+
 	wo := &opt.WriteOptions{
 		NoWriteMerge: false,
-		Sync: true,
+		Sync: db.syncWrites,
 	}
 	return db.db.Delete(key, wo)
+}
+
+// SetSync sets the sync write mode for the database
+func (db *LDBDatabase) SetSync(sync bool) {
+	db.syncLock.Lock()
+	defer db.syncLock.Unlock()
+
+	db.syncWrites = sync
 }
 
 func (db *LDBDatabase) NewIterator() iterator.Iterator {

@@ -34,6 +34,7 @@ type Deleter interface {
 type Database interface {
 	Putter
 	Deleter
+	SetSync(bool)
 	Get(key []byte) ([]byte, error)
 	Has(key []byte) (bool, error)
 	Close()

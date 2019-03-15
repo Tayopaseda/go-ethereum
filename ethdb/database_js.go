@@ -56,6 +56,8 @@ func (db *LDBDatabase) Delete(key []byte) error {
 	return errNotSupported
 }
 
+func (db *LDBDatabase) SetSync(bool) {}
+
 func (db *LDBDatabase) Close() {
 }
 
