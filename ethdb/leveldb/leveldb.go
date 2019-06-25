@@ -71,6 +71,9 @@ type Database struct {
 	diskReadMeter    metrics.Meter // Meter for measuring the effective amount of data read
 	diskWriteMeter   metrics.Meter // Meter for measuring the effective amount of data written
 
+	syncLock sync.RWMutex // Mutex protecting sync flag
+	syncWrites bool
+
 	quitLock sync.Mutex      // Mutex protecting the quit channel access
 	quitChan chan chan error // Quit channel to stop the metrics collection before closing the database
 
@@ -108,6 +111,7 @@ func New(file string, cache int, handles int, namespace string) (*Database, erro
 		fn:       file,
 		db:       db,
 		log:      logger,
+		syncWrites: true,
 		quitChan: make(chan chan error),
 	}
 	ldb.compTimeMeter = metrics.NewRegisteredMeter(namespace+"compact/time", nil)
@@ -157,12 +161,26 @@ func (db *Database) Get(key []byte) ([]byte, error) {
 
 // Put inserts the given value into the key-value store.
 func (db *Database) Put(key []byte, value []byte) error {
-	return db.db.Put(key, value, nil)
+	db.syncLock.RLock()
+	defer db.syncLock.RUnlock()
+
+	wo := &opt.WriteOptions{
+		NoWriteMerge: false,
+		Sync: db.syncWrites,
+	}
+	return db.db.Put(key, value, wo)
 }
 
 // Delete removes the key from the key-value store.
 func (db *Database) Delete(key []byte) error {
-	return db.db.Delete(key, nil)
+	db.syncLock.RLock()
+	defer db.syncLock.RUnlock()
+
+	wo := &opt.WriteOptions{
+		NoWriteMerge: false,
+		Sync: db.syncWrites,
+	}
+	return db.db.Delete(key, wo)
 }
 
 // NewBatch creates a write-only key-value store that buffers changes to its host
@@ -419,7 +437,11 @@ func (b *batch) ValueSize() int {
 
 // Write flushes any accumulated data to disk.
 func (b *batch) Write() error {
-	return b.db.Write(b.b, nil)
+	wo := &opt.WriteOptions{
+		NoWriteMerge: false,
+		Sync: true,
+	}
+	return b.db.Write(b.b, wo)
 }
 
 // Reset resets the batch for reuse.
@@ -455,4 +477,11 @@ func (r *replayer) Delete(key []byte) {
 		return
 	}
 	r.failure = r.writer.Delete(key)
+}
+
+func (db *Database) SetSync(sync bool) {
+	db.syncLock.Lock()
+	defer db.syncLock.Unlock()
+
+	db.syncWrites = sync
 }

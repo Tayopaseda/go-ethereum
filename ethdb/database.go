@@ -128,4 +128,5 @@ type Database interface {
 	Stater
 	Compacter
 	io.Closer
+	SetSync(bool)
 }

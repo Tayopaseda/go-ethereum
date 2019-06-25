@@ -71,6 +71,8 @@ func (db *Database) Close() error {
 	return nil
 }
 
+func (db *Database) SetSync(bool) {}
+
 // Has retrieves if a key is present in the key-value store.
 func (db *Database) Has(key []byte) (bool, error) {
 	db.lock.RLock()
@@ -341,3 +343,4 @@ func (it *iterator) Value() []byte {
 func (it *iterator) Release() {
 	it.keys, it.values = nil, nil
 }
+

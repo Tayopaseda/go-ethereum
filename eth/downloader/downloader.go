@@ -184,6 +184,9 @@ type LightChain interface {
 type BlockChain interface {
 	LightChain
 
+	// Set sync write mode of underlying db
+	SetSync(bool)
+
 	// HasBlock verifies a block's presence in the local chain.
 	HasBlock(common.Hash, uint64) bool
 
@@ -408,6 +411,13 @@ func (d *Downloader) synchronise(id string, hash common.Hash, td *big.Int, mode 
 	if p == nil {
 		return errUnknownPeer
 	}
+
+	// For the duration of the sync, disable sync writes
+	d.blockchain.SetSync(false)
+	defer d.blockchain.SetSync(true)
+	d.stateDB.SetSync(false)
+	defer d.stateDB.SetSync(true)
+
 	return d.syncWithPeer(p, hash, td)
 }
 
