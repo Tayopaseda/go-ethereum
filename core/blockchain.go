@@ -851,6 +851,8 @@ func (bc *BlockChain) procFutureBlocks() {
 	}
 }
 
+func (bc *BlockChain) SetSync(bool) {}
+
 // WriteStatus status of write
 type WriteStatus byte
 

@@ -40,6 +40,11 @@ func (t *table) Close() error {
 	return nil
 }
 
+
+func (t *table) SetSync(sync bool) {
+	t.db.SetSync(sync)
+}
+
 // Has retrieves if a prefixed version of a key is present in the database.
 func (t *table) Has(key []byte) (bool, error) {
 	return t.db.Has(append([]byte(t.prefix), key...))

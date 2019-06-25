@@ -65,6 +65,7 @@ type KeyValueStore interface {
 	Stater
 	Compacter
 	io.Closer
+	SetSync(bool)
 }
 
 // AncientReader contains the methods required to read from immutable ancient data.
